@@ -41,7 +41,7 @@ def load_kobo_data():
 # Chargement des données
 df = load_kobo_data()
 
-if df is not None:
+'''if df is not None:
     # --- NETTOYAGE DES DONNÉES (Adapter selon vos noms de colonnes Kobo) ---
     # Souvent Kobo ajoute des préfixes, on les simplifie ici si nécessaire
     
@@ -87,4 +87,51 @@ else:
 # Bouton de téléchargement Excel pour le QG
 if df is not None:
     csv = df.to_csv(index=False).encode('utf-8')
-    st.download_button("📥 Télécharger le rapport complet (CSV)", csv, "rapport_bounkani.csv", "text/csv")
+    st.download_button("📥 Télécharger le rapport complet (CSV)", csv, "rapport_bounkani.csv", "text/csv")'''
+
+if df is not None:
+    # --- INDICATEURS CLÉS ---
+    total_menages = len(df)
+    st.metric("Ménages Évalués", total_menages)
+
+    # 1. ANALYSE GÉOGRAPHIQUE
+    # Vos colonnes s'appellent 'ident/region', 'ident/departement', etc.
+    if 'ident/departement' in df.columns:
+        st.write("### 📍 Analyse par Département")
+        fig_dept = px.bar(df['ident/departement'].value_counts(), 
+                         labels={'value': 'Nombre', 'index': 'Département'},
+                         color_value=df['ident/departement'].value_counts().index)
+        st.plotly_chart(fig_dept, use_container_width=True)
+
+    # 2. PROFIL DES RÉPONDANTS
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        if 'ident/sexe_chef' in df.columns:
+            st.write("### Sexe du Chef de Ménage")
+            fig_sexe = px.pie(df, names='ident/sexe_chef', hole=0.4,
+                              color_discrete_sequence=px.colors.qualitative.Pastel)
+            st.plotly_chart(fig_sexe)
+
+    with col2:
+        if 'ident/statut_enq' in df.columns:
+            st.write("### Statut des personnes")
+            fig_statut = px.pie(df, names='ident/statut_enq', hole=0.4)
+            st.plotly_chart(fig_statut)
+
+    # 3. ANALYSE DES BESOINS (ALIMENTATION)
+    if 'bes_alim/repas_jour' in df.columns:
+        st.write("### 🥗 Nombre de repas par jour (après inondation)")
+        fig_repas = px.histogram(df, x='bes_alim/repas_jour', 
+                                 title="Distribution du nombre de repas",
+                                 color_discrete_sequence=['#FF4B4B'])
+        st.plotly_chart(fig_repas, use_container_width=True)
+
+    # 4. TABLEAU DE DÉTAIL
+    with st.expander("🔍 Voir toutes les données détaillées"):
+        # On affiche le tableau mais avec des noms plus simples pour la lecture
+        st.dataframe(df)
+
+# Bouton de téléchargement
+csv = df.to_csv(index=False).encode('utf-8')
+st.download_button("📥 Télécharger les données (CSV)", csv, "donnees_kobo_bounkani.csv", "text/csv")
