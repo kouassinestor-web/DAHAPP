@@ -9,7 +9,7 @@ st.set_page_config(page_title="Dashboard Bounkani", layout="wide")
 # --- PARAMÈTRES KOBO (À remplir) ---
 KOBO_TOKEN = "7f409a0bdd3da09fe59e8ae57e5c099f011d2405" # Exemple: "a1b2c3d4e5f6..."
 FORM_ID = "abrJjNyA6FX9LLzg6CUW7f" # Exemple: "aN7Hpxyz..."
-KOBO_URL = f"https://kf.kobotoolbox.org/api/v2/assets/{FORM_ID}/data/?format=json"
+KOBO_URL = f"https://kobo.humanitarianresponse.info/api/v2/assets/{FORM_ID}/data/?format=json"
 
 st.title("📊 Rapport de Vulnérabilité : Région du Bounkani")
 st.markdown("---")
@@ -17,13 +17,26 @@ st.markdown("---")
 @st.cache_data(ttl=600) # Rafraîchit les données toutes les 10 minutes
 def load_kobo_data():
     headers = {"Authorization": f"Token {KOBO_TOKEN}"}
-    response = requests.get(KOBO_URL, headers=headers)
+    # On teste l'URL directe sans le /data/ à la fin pour voir si le formulaire est reconnu
+    test_url = f"https://kf.kobotoolbox.org/api/v2/assets/{FORM_ID}/?format=json"
+    
+    response = requests.get(test_url, headers=headers)
+    
     if response.status_code == 200:
-        data = response.json()
-        return pd.DataFrame(data['results'])
+        # Si on arrive ici, l'ID est BON. On tente alors de récupérer les données.
+        data_url = f"https://kf.kobotoolbox.org/api/v2/assets/{FORM_ID}/data/?format=json"
+        data_response = requests.get(data_url, headers=headers)
+        if data_response.status_code == 200:
+            return pd.DataFrame(data_response.json()['results'])
+        else:
+            st.error(f"Formulaire trouvé, mais erreur d'accès aux données : {data_response.status_code}")
+    elif response.status_code == 404:
+        st.error(f"L'ID du formulaire '{FORM_ID}' est introuvable sur kf.kobotoolbox.org. Vérifiez l'ID dans l'URL de votre navigateur.")
+    elif response.status_code == 401:
+        st.error("Le Token est incorrect ou vous n'avez pas les permissions.")
     else:
-        st.error(f"Erreur de connexion Kobo : {response.status_code}")
-        return None
+        st.error(f"Erreur inconnue : {response.status_code}")
+    return None
 
 # Chargement des données
 df = load_kobo_data()
