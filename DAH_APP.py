@@ -9,7 +9,7 @@ st.set_page_config(page_title="Dashboard Bounkani", layout="wide")
 # --- PARAMÈTRES KOBO (À remplir) ---
 KOBO_TOKEN = "7f409a0bdd3da09fe59e8ae57e5c099f011d2405" # Exemple: "a1b2c3d4e5f6..."
 FORM_ID = "abrJjNyA6FX9LLzg6CUW7f" # Exemple: "aN7Hpxyz..."
-KOBO_URL = f"https://kobo.humanitarianresponse.info/api/v2/assets/{FORM_ID}/data/?format=json"
+KOBO_URL = f"https://kf.kobotoolbox.org/api/v2/assets/{FORM_ID}/data/?format=json"
 
 st.title("📊 Rapport de Vulnérabilité : Région du Bounkani")
 st.markdown("---")
