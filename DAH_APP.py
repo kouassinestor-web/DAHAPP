@@ -41,97 +41,46 @@ def load_kobo_data():
 # Chargement des données
 df = load_kobo_data()
 
-'''if df is not None:
-    # --- NETTOYAGE DES DONNÉES (Adapter selon vos noms de colonnes Kobo) ---
-    # Souvent Kobo ajoute des préfixes, on les simplifie ici si nécessaire
-    
+if df is not None:
     # 1. INDICATEURS CLÉS (KPI)
     total_menages = len(df)
     col1, col2, col3 = st.columns(3)
     col1.metric("Ménages Évalués", total_menages)
-    
-    # Calculer un exemple : % de besoin WASH (si vous avez une colonne wash_traitement)
-    if 'WASH_Traitement' in df.columns:
-        besoin_wash = (df['WASH_Traitement'] == 'Rien').sum()
-        col2.metric("Urgence WASH", f"{besoin_wash} ménages", delta="Besoin d'aide")
 
-    # 2. GRAPHIQUES
-    st.write("### Analyse par Département")
-    # Remplacez 'Departement' par le nom exact de votre colonne dans Kobo
-    if 'Departement' in df.columns:
-        fig_dept = px.bar(df['Departement'].value_counts(), 
-                         labels={'value': 'Nombre de ménages', 'index': 'Département'},
-                         color_value=df['Departement'].value_counts().index,
-                         title="Répartition de la collecte")
-        st.plotly_chart(fig_dept, use_container_width=True)
+    # Calcul Urgence WASH (basé sur votre colonne 'bes_eau/potab_inond')
+    if 'bes_eau/potab_inond' in df.columns:
+        besoin_wash = (df['bes_eau/potab_inond'] == 'non').sum()
+        col2.metric("Sans Eau Potable", f"{besoin_wash}", delta="Urgent", delta_color="inverse")
 
-    # 3. RÉPARTITION PAR SEXE
-    st.write("### Profil des Chefs de Ménage")
-    c1, c2 = st.columns(2)
-    with c1:
-        if 'Sexe' in df.columns:
-            fig_sexe = px.pie(df, names='Sexe', title="Sexe du Chef de Ménage", hole=0.4)
-            st.plotly_chart(fig_sexe)
-    with c2:
-        if 'Nationalite' in df.columns:
-            fig_nat = px.pie(df, names='Nationalite', title="Nationalité")
-            st.plotly_chart(fig_nat)
+    st.divider()
 
-    # 4. TABLEAU DE DONNÉES BRUTES
-    with st.expander("Voir le détail des fiches collectées"):
-        st.dataframe(df)
-
-else:
-    st.warning("En attente de synchronisation des données depuis les téléphones des enquêteurs...")
-
-# Bouton de téléchargement Excel pour le QG
-if df is not None:
-    csv = df.to_csv(index=False).encode('utf-8')
-    st.download_button("📥 Télécharger le rapport complet (CSV)", csv, "rapport_bounkani.csv", "text/csv")'''
-
-if df is not None:
-    # --- INDICATEURS CLÉS ---
-    total_menages = len(df)
-    st.metric("Ménages Évalués", total_menages)
-
-    # 1. ANALYSE GÉOGRAPHIQUE
-    # Vos colonnes s'appellent 'ident/region', 'ident/departement', etc.
+    # 2. ANALYSE GÉOGRAPHIQUE
     if 'ident/departement' in df.columns:
         st.write("### 📍 Analyse par Département")
         fig_dept = px.bar(df['ident/departement'].value_counts(), 
-                         labels={'value': 'Nombre', 'index': 'Département'},
-                         color_value=df['ident/departement'].value_counts().index)
+                         labels={'value': 'Nombre de fiches', 'index': 'Département'},
+                         color_discrete_sequence=['#00CC96'])
         st.plotly_chart(fig_dept, use_container_width=True)
 
-    # 2. PROFIL DES RÉPONDANTS
-    col1, col2 = st.columns(2)
-    
-    with col1:
+    # 3. PROFIL DES RÉPONDANTS
+    st.write("### 👥 Profil des Chefs de Ménage")
+    c1, c2 = st.columns(2)
+    with c1:
         if 'ident/sexe_chef' in df.columns:
-            st.write("### Sexe du Chef de Ménage")
-            fig_sexe = px.pie(df, names='ident/sexe_chef', hole=0.4,
-                              color_discrete_sequence=px.colors.qualitative.Pastel)
+            fig_sexe = px.pie(df, names='ident/sexe_chef', title="Répartition par Sexe", hole=0.4)
             st.plotly_chart(fig_sexe)
-
-    with col2:
+    with c2:
         if 'ident/statut_enq' in df.columns:
-            st.write("### Statut des personnes")
-            fig_statut = px.pie(df, names='ident/statut_enq', hole=0.4)
+            fig_statut = px.pie(df, names='ident/statut_enq', title="Statut (Réfugié/Hôte/PDI)", hole=0.4)
             st.plotly_chart(fig_statut)
 
-    # 3. ANALYSE DES BESOINS (ALIMENTATION)
-    if 'bes_alim/repas_jour' in df.columns:
-        st.write("### 🥗 Nombre de repas par jour (après inondation)")
-        fig_repas = px.histogram(df, x='bes_alim/repas_jour', 
-                                 title="Distribution du nombre de repas",
-                                 color_discrete_sequence=['#FF4B4B'])
-        st.plotly_chart(fig_repas, use_container_width=True)
-
-    # 4. TABLEAU DE DÉTAIL
-    with st.expander("🔍 Voir toutes les données détaillées"):
-        # On affiche le tableau mais avec des noms plus simples pour la lecture
+    # 4. TABLEAU DE DONNÉES BRUTES
+    with st.expander("🔍 Voir le détail des fiches collectées"):
         st.dataframe(df)
 
-# Bouton de téléchargement
-csv = df.to_csv(index=False).encode('utf-8')
-st.download_button("📥 Télécharger les données (CSV)", csv, "donnees_kobo_bounkani.csv", "text/csv")
+    # 5. BOUTON DE TÉLÉCHARGEMENT
+    csv = df.to_csv(index=False).encode('utf-8')
+    st.download_button("📥 Télécharger le rapport complet (CSV)", csv, "rapport_dah_bounkani.csv", "text/csv")
+
+else:
+    st.warning("⚠️ En attente de synchronisation des données depuis les téléphones des enquêteurs...")
